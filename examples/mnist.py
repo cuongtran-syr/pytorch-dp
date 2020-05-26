@@ -7,6 +7,7 @@ Runs MNIST training with differential privacy.
 """
 
 import argparse
+import random
 
 import numpy as np
 
@@ -189,9 +190,19 @@ def main():
         default="../mnist",
         help="Where MNIST is/will be stored",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="Random seed for deterministic runs",
+    )
     args = parser.parse_args()
     print(dumps(vars(args), indent=4, sort_keys=True))
     device = torch.device(args.device)
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
 
     kwargs = {"num_workers": 1, "pin_memory": True}
 
