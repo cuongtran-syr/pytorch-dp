@@ -14,10 +14,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchdp import PrivacyEngine
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=FutureWarning)
+    from torchdp import PrivacyEngine
+from json import dumps
 from torchvision import datasets, transforms
 from tqdm import tqdm
-
 
 # Precomputed characteristics of the MNIST dataset
 MNIST_MEAN = 0.1307
@@ -165,7 +168,7 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
+        default='cuda' if torch.cuda.is_available() else 'cpu',
         help="GPU ID for this process (default: 'cuda')",
     )
     parser.add_argument(
@@ -187,6 +190,7 @@ def main():
         help="Where MNIST is/will be stored",
     )
     args = parser.parse_args()
+    print(dumps(vars(args), indent=4, sort_keys=True))
     device = torch.device(args.device)
 
     kwargs = {"num_workers": 1, "pin_memory": True}
