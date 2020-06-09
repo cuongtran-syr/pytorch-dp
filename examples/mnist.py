@@ -175,8 +175,8 @@ def main():
     parser.add_argument(
         "--save-model",
         action="store_true",
-        default=False,
-        help="Save the trained model (default: false)",
+        default=True,
+        help="Save the trained model",
     )
     parser.add_argument(
         "--disable-dp",

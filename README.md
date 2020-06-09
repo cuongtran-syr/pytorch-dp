@@ -44,6 +44,23 @@ privacy_engine.attach(optimizer)
 ```
 The [MNIST example](examples/mnist.py) contains an end to end run.
 
+## Environment
+
+1. Create environment
+```bash
+conda env create --prefix="./.venv" --file=environment.yml
+```
+
+1. Activate environment
+```bash
+conda activate "./.venv"
+```
+
+1. Deactivate environment
+```bash
+conda deactivate
+```
+
 ## Contributing
 See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
 
