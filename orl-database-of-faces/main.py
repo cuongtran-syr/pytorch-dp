@@ -1,3 +1,5 @@
+from os.path import join, dirname
+
 import torch.nn as nn
 import numpy as np
 
@@ -24,9 +26,13 @@ def read_pgm(pgmf):
 		for y in range(width):
 			row.append(ord(pgmf.read(1)))
 		raster.append(row)
-	return np.array(raster)
+	return np.array(raster, np.uint8)
+
+def display_example():
+	from matplotlib import pyplot as plt
+	plt.imshow(read_pgm(open(join(dirname(__file__), 's1', '1.pgm'), 'rb')), plt.cm.gray)
+	plt.show()
 
 if __name__ == '__main__':
-	a = read_pgm(open('s1/1.pgm', 'rb'))
-	np.save('a.out', a)
+	display_example()
 

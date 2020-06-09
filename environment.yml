@@ -14,6 +14,7 @@ dependencies:
   - tensorboard=1.14.0
   - tensorflow
   - tensorboardX
+  - matplotlib
   - pip
   - pip:
     - pytorch-dp
