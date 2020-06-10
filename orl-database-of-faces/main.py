@@ -1,18 +1,13 @@
 import os
 from os.path import join, dirname
+import random
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from matplotlib import pyplot as plt
-
-class Net(nn.Module):
-
-	def __init__():
-		super().__init__()
-	
-	def forward(t):
-		return t
+from tqdm import trange
 
 def read_pgm(pgmf):
 	"""Return a raster of integers from a PGM as a list of lists."""
@@ -67,8 +62,36 @@ def write_data():
 	print(f'Successfully saved "{train_features_path}", "{train_labels_path}", "{test_features_path}", "{test_labels_path}"')
 
 def train():
-	n = Net()
+	n = nn.Sequential(
+		nn.Flatten(),
+		nn.Linear(in_features=112 * 92, out_features=40),
+	)
+	optimizer = torch.optim.Adam(n.parameters(), lr=0.001)
+
+	train_features = torch.load(join(dirname(__file__), f'train_features{os.extsep}pt')).float()
+	train_labels = torch.load(join(dirname(__file__), f'train_labels{os.extsep}pt')).long()
+	test_features = torch.load(join(dirname(__file__), f'test_features{os.extsep}pt')).float()
+	test_labels = torch.load(join(dirname(__file__), f'test_labels{os.extsep}pt')).long()
+
+	for i in trange(1000):
+		pred_train_labels = n(train_features)
+		loss = F.cross_entropy(pred_train_labels, train_labels)
+
+		optimizer.zero_grad()
+		loss.backward()
+		optimizer.step()
+
+	print(f'Performance')
+	with torch.no_grad():
+		n.eval()
+		print(f'Train performance: {(n(train_features).max(axis=1).indices == train_labels).sum().item() / len(train_labels)}')
+		print(f'Test performance: {(n(test_features).max(axis=1).indices == test_labels).sum().item() / len(test_labels)}')
 
 if __name__ == '__main__':
-	write_data()
+	seed = 0
+	random.seed(seed)
+	np.random.seed(seed)
+	torch.manual_seed(seed)
+	torch.cuda.manual_seed_all(seed)
+	train()
 
