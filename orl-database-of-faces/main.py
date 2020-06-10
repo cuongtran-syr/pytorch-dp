@@ -35,20 +35,32 @@ def display_example():
 	plt.show()
 
 def get_data():
-	t = torch.empty(size=(400, 1, 112, 92), dtype=torch.uint8)
+	train = torch.empty(size=(280, 1, 112, 92), dtype=torch.uint8)
+	test = torch.empty(size=(120, 1, 112, 92), dtype=torch.uint8)
 	i = 0
 	for root, dirs, files in os.walk(dirname(__file__), topdown=True):
-		dirs.sort(key=lambda w: (len(w), w))
-		files.sort(key=lambda w: (len(w), w))
+		dirs.sort(key=lambda w: (len(w), w)) #sort by length first, then lexicographically
+		files.sort(key=lambda w: (len(w), w)) #sort by length first, then lexicographically
 		for filename in files:
 			if filename.endswith(f'{os.extsep}pgm'):
-				t[i] = read_pgm(open(join(root, filename), 'rb')).unsqueeze(0)
+				if i % 10 < 7:
+					train[(i % 10) + (i // 10) * 7] = read_pgm(open(join(root, filename), 'rb')).unsqueeze(0)
+				else:
+					test[((i - 7) % 10) + (i // 10) * 3] = read_pgm(open(join(root, filename), 'rb')).unsqueeze(0)
 				i += 1
-	return t
+	return train, test
+
+def write_data():
+	train, test = get_data()
+	train_path = join(dirname(__file__), f'train{os.extsep}pt')
+	test_path = join(dirname(__file__), f'test{os.extsep}pt')
+	torch.save(train, train_path)
+	torch.save(test, test_path)
+	print(f'Successfully saved "{train_path}" and "{test_path}"')
 
 def train():
 	n = Net()
 
 if __name__ == '__main__':
-	print(get_data().shape)
+	write_data()
 
