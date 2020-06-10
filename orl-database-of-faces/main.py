@@ -66,26 +66,51 @@ def train():
 		nn.Flatten(),
 		nn.Linear(in_features=112 * 92, out_features=40),
 	)
-	optimizer = torch.optim.Adam(n.parameters(), lr=0.001)
+	optimizer = torch.optim.Adam(n.parameters(), lr=0.01)
 
 	train_features = torch.load(join(dirname(__file__), f'train_features{os.extsep}pt')).float()
 	train_labels = torch.load(join(dirname(__file__), f'train_labels{os.extsep}pt')).long()
 	test_features = torch.load(join(dirname(__file__), f'test_features{os.extsep}pt')).float()
 	test_labels = torch.load(join(dirname(__file__), f'test_labels{os.extsep}pt')).long()
 
-	for i in trange(1000):
+	train_losses = []
+	test_losses = []
+	train_accuracy = []
+	test_accuracy = []
+	for i in trange(101):
 		pred_train_labels = n(train_features)
 		loss = F.cross_entropy(pred_train_labels, train_labels)
+		train_losses.append(loss.item())
+		train_accuracy.append((pred_train_labels.max(axis=1).indices == train_labels).sum().item() / len(train_labels))
 
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
 
+		if i % 5 == 0:
+			n.eval()
+			with torch.no_grad():
+				pred_test_labels = n(test_features)
+				loss = F.cross_entropy(pred_test_labels, test_labels)
+				test_losses.append((i, loss.item()))
+				test_accuracy.append((i, (pred_test_labels.max(axis=1).indices == test_labels).sum().item() / len(test_labels)))
+			n.train()
+
 	print(f'Performance')
 	with torch.no_grad():
 		n.eval()
-		print(f'Train performance: {(n(train_features).max(axis=1).indices == train_labels).sum().item() / len(train_labels)}')
-		print(f'Test performance: {(n(test_features).max(axis=1).indices == test_labels).sum().item() / len(test_labels)}')
+		print(f'Train performance: {(n(train_features).max(axis=1).indices == train_labels).sum().item() / len(train_labels) * 100:.2f}%')
+		print(f'Test performance: {(n(test_features).max(axis=1).indices == test_labels).sum().item() / len(test_labels) * 100:.2f}%')
+		plt.plot(range(len(train_losses)), train_losses, label='Train loss')
+		plt.plot([t[0] for t in test_losses], [t[1] for t in test_losses], label='Validation loss')
+		plt.legend()
+		plt.title('Loss of training and validation')
+		plt.show()
+		plt.plot(range(len(train_accuracy)), train_accuracy, label='Train accuracy')
+		plt.plot([t[0] for t in test_accuracy], [t[1] for t in test_accuracy], label='Validation accuracy')
+		plt.legend()
+		plt.title('Accuracy of training and validation')
+		plt.show()
 
 if __name__ == '__main__':
 	seed = 0
