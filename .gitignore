@@ -112,6 +112,8 @@ website/static/_sphinx-sources/
 ## Project-specific files to ignore
 examples/*.pt
 mnist
-orl-database-of-faces/train.pt
-orl-database-of-faces/test.pt
+orl-database-of-faces/train_features.pt
+orl-database-of-faces/train_labels.pt
+orl-database-of-faces/test_features.pt
+orl-database-of-faces/test_labels.pt
 
