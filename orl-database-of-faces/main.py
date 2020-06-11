@@ -95,7 +95,7 @@ def train():
 				test_losses.append((i, loss.item()))
 				test_accuracy.append((i, (pred_test_labels.max(axis=1).indices == test_labels).sum().item() / len(test_labels)))
 			n.train()
-
+	'''
 	with torch.no_grad():
 		n.eval()
 		print(f'Train performance: {(n(train_features).max(axis=1).indices == train_labels).sum().item() / len(train_labels) * 100:.2f}%')
@@ -110,6 +110,27 @@ def train():
 		plt.legend()
 		plt.title('Accuracy of training and validation')
 		plt.show()
+	'''
+
+	model_invert(6, 1000, 0, 0, 0.001, n)
+
+def model_invert(label, max_steps, beta, gamma, learning_rate, net):
+	torch.set_grad_enabled(True)
+	#net.eval()
+	x = torch.autograd.Variable(torch.zeros(size=(1, 1, 112, 92), dtype=torch.float, requires_grad=True), requires_grad=True)
+	x_min = x
+	c_min = float('inf')
+	print('Model inversion')
+	for step in trange(max_steps):
+		net.zero_grad()
+		cost = 1 - net(x)[0, label]
+		cost.backward()
+		x = torch.autograd.Variable(x - learning_rate * x.grad, requires_grad=True)
+		'''if c_min > cost:
+			c_min = cost
+			x_min = x'''
+	plt.imshow(x.detach().numpy()[0][0], plt.cm.gray)
+	plt.show()
 
 if __name__ == '__main__':
 	seed = 0
