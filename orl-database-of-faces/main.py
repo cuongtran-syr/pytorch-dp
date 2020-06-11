@@ -1,6 +1,12 @@
 import os
 from os.path import join, dirname
 import random
+import sys
+
+import warnings
+with warnings.catch_warnings():
+	warnings.filterwarnings("ignore",category=FutureWarning)
+	from torchdp import PrivacyEngine
 
 import torch
 import torch.nn as nn
@@ -87,11 +93,22 @@ def train(architecture='softmax'):
 	test_features = torch.load(join(os.curdir, dirname(__file__), f'test_features{os.extsep}pt')).float()
 	test_labels = torch.load(join(os.curdir, dirname(__file__), f'test_labels{os.extsep}pt')).long()
 
+	if len(sys.argv) > 1:
+		privacy_engine = PrivacyEngine(
+			n,
+			batch_size=train_labels.shape[0],
+			sample_size=train_labels.shape[0],
+			alphas=[1 + x / 10.0 for x in range(1, 100)] + list(range(12, 64)),
+			noise_multiplier=float(sys.argv[1]),
+			max_grad_norm=1.5,
+		)
+		privacy_engine.attach(optimizer)
+
 	train_losses = []
 	test_losses = []
 	train_accuracy = []
 	test_accuracy = []
-	print(f'Train Network {architecture} with learning rate {lr}')
+	print(f'Train Network {architecture} with learning rate {lr}' + (f' and sigma {float(sys.argv[1])}' if len(sys.argv) > 1 else ''))
 	for i in trange(101):
 		pred_train_labels = n(train_features)
 		loss = F.cross_entropy(pred_train_labels, train_labels)
@@ -110,6 +127,15 @@ def train(architecture='softmax'):
 				test_losses.append((i, loss.item()))
 				test_accuracy.append((i, (pred_test_labels.max(axis=1).indices == test_labels).sum().item() / len(test_labels)))
 			n.train()
+
+		if len(sys.argv) > 1:
+			delta = 1e-5
+			epsilon, best_alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+			print(
+				f"Train Epoch: {i} \t"
+				f"Loss: {np.mean(train_losses):.6f} "
+				f"(ε = {epsilon:.2f}, δ = {delta}) for α = {best_alpha}"
+			)
 
 	with torch.no_grad():
 		n.eval()
