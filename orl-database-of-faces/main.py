@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from matplotlib import pyplot as plt
-from tqdm import trange
+from tqdm import tqdm, trange
 
 def read_pgm(pgmf):
 	"""Return a raster of integers from a PGM as a list of lists."""
@@ -109,33 +109,31 @@ def train(architecture='softmax'):
 	train_accuracy = []
 	test_accuracy = []
 	print(f'Train Network {architecture} with learning rate {lr}' + (f' and sigma {float(sys.argv[1])}' if len(sys.argv) > 1 else ''))
-	for i in trange(101):
-		pred_train_labels = n(train_features)
-		loss = F.cross_entropy(pred_train_labels, train_labels)
-		train_losses.append(loss.item())
-		train_accuracy.append((pred_train_labels.max(axis=1).indices == train_labels).sum().item() / len(train_labels))
+	num_epochs = 101
+	with tqdm(total=num_epochs, dynamic_ncols=True) as pbar:
+		for i in range(num_epochs):
+			pred_train_labels = n(train_features)
+			loss = F.cross_entropy(pred_train_labels, train_labels)
+			train_losses.append(loss.item())
+			train_accuracy.append((pred_train_labels.max(axis=1).indices == train_labels).sum().item() / len(train_labels))
 
-		optimizer.zero_grad()
-		loss.backward()
-		optimizer.step()
+			optimizer.zero_grad()
+			loss.backward()
+			optimizer.step()
 
-		if i % 5 == 0:
-			n.eval()
-			with torch.no_grad():
-				pred_test_labels = n(test_features)
-				loss = F.cross_entropy(pred_test_labels, test_labels)
-				test_losses.append((i, loss.item()))
-				test_accuracy.append((i, (pred_test_labels.max(axis=1).indices == test_labels).sum().item() / len(test_labels)))
-			n.train()
-
-		if len(sys.argv) > 1:
-			delta = 1e-5
-			epsilon, best_alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-			print(
-				f"Train Epoch: {i} \t"
-				f"Loss: {np.mean(train_losses):.6f} "
-				f"(ε = {epsilon:.2f}, δ = {delta}) for α = {best_alpha}"
-			)
+			if i % 5 == 0:
+				n.eval()
+				with torch.no_grad():
+					pred_test_labels = n(test_features)
+					loss = F.cross_entropy(pred_test_labels, test_labels)
+					test_losses.append((i, loss.item()))
+					test_accuracy.append((i, (pred_test_labels.max(axis=1).indices == test_labels).sum().item() / len(test_labels)))
+				n.train()
+			if len(sys.argv) > 1:
+				delta = 1e-5
+				epsilon, best_alpha = optimizer.privacy_engine.get_privacy_spent(delta)
+				pbar.set_description(f'Loss = {np.mean(train_losses):.4f}, (ε = {epsilon:.2f}, δ = {delta}) for α = {best_alpha}')
+			pbar.update(1)
 
 	with torch.no_grad():
 		n.eval()
