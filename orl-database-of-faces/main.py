@@ -61,12 +61,26 @@ def write_data():
 	torch.save(test_labels, test_labels_path)
 	print(f'Successfully saved "{train_features_path}", "{train_labels_path}", "{test_features_path}", "{test_labels_path}"')
 
-def train():
+def train(architecture='softmax'):
 	n = nn.Sequential(
 		nn.Flatten(),
 		nn.Linear(in_features=112 * 92, out_features=40),
+	) if architecture == 'softmax' else nn.Sequential(
+		nn.Conv2d(in_channels=1, out_channels=1, kernel_size=5, padding=2, stride=1),
+		nn.Flatten(),
+		nn.Linear(in_features=112 * 92, out_features=40),
+	) if architecture == 'conv 1 channel' else nn.Sequential(
+		nn.Conv2d(in_channels=1, out_channels=3, kernel_size=5, padding=2, stride=1),
+		nn.Flatten(),
+		nn.Linear(in_features=112 * 92 * 3, out_features=40),
+	) if architecture == 'conv 3 channel' else nn.Sequential(
+		nn.Flatten(),
+		nn.Linear(in_features=112 * 92, out_features=1500),
+		nn.ReLU(),
+		nn.Linear(in_features=1500, out_features=40),
 	)
-	optimizer = torch.optim.Adam(n.parameters(), lr=0.01)
+	lr = 0.01
+	optimizer = torch.optim.Adam(n.parameters(), lr=lr)
 
 	train_features = torch.load(join(os.curdir, dirname(__file__), f'train_features{os.extsep}pt')).float()
 	train_labels = torch.load(join(os.curdir, dirname(__file__), f'train_labels{os.extsep}pt')).long()
@@ -77,6 +91,7 @@ def train():
 	test_losses = []
 	train_accuracy = []
 	test_accuracy = []
+	print(f'Train Network {architecture} with learning rate {lr}')
 	for i in trange(101):
 		pred_train_labels = n(train_features)
 		loss = F.cross_entropy(pred_train_labels, train_labels)
@@ -95,7 +110,7 @@ def train():
 				test_losses.append((i, loss.item()))
 				test_accuracy.append((i, (pred_test_labels.max(axis=1).indices == test_labels).sum().item() / len(test_labels)))
 			n.train()
-	'''
+
 	with torch.no_grad():
 		n.eval()
 		print(f'Train performance: {(n(train_features).max(axis=1).indices == train_labels).sum().item() / len(train_labels) * 100:.2f}%')
@@ -110,13 +125,12 @@ def train():
 		plt.legend()
 		plt.title('Accuracy of training and validation')
 		plt.show()
-	'''
 
-	model_invert(6, 1000, 0, 0, 0.001, n)
+	model_invert(6, 200, 0.01, n)
 
-def model_invert(label, max_steps, beta, gamma, learning_rate, net):
+def model_invert(label, max_steps, learning_rate, net):
 	torch.set_grad_enabled(True)
-	#net.eval()
+	net.eval()
 	x = torch.autograd.Variable(torch.zeros(size=(1, 1, 112, 92), dtype=torch.float, requires_grad=True), requires_grad=True)
 	x_min = x
 	c_min = float('inf')
@@ -126,10 +140,10 @@ def model_invert(label, max_steps, beta, gamma, learning_rate, net):
 		cost = 1 - net(x)[0, label]
 		cost.backward()
 		x = torch.autograd.Variable(x - learning_rate * x.grad, requires_grad=True)
-		'''if c_min > cost:
+		if c_min > cost:
 			c_min = cost
-			x_min = x'''
-	plt.imshow(x.detach().numpy()[0][0], plt.cm.gray)
+			x_min = x
+	plt.imshow(x_min.detach().numpy()[0][0], plt.cm.gray)
 	plt.show()
 
 if __name__ == '__main__':
