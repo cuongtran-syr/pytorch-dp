@@ -132,7 +132,7 @@ def train(architecture='softmax'):
 			if len(sys.argv) > 1:
 				delta = 1e-5
 				epsilon, best_alpha = optimizer.privacy_engine.get_privacy_spent(delta)
-				pbar.set_description(f'Loss = {np.mean(train_losses):.4f}, (ε = {epsilon:.2f}, δ = {delta}) for α = {best_alpha}')
+				pbar.set_description(f'Loss = {np.mean(train_losses):.4f}, ε = {epsilon:.2f}')
 			pbar.update(1)
 
 	with torch.no_grad():
@@ -150,7 +150,7 @@ def train(architecture='softmax'):
 		plt.title('Accuracy of training and validation')
 		plt.show()
 
-	model_invert(6, 200, 0.01, n)
+	model_invert(1, 200, 0.01, n)
 
 def model_invert(label, max_steps, learning_rate, net):
 	torch.set_grad_enabled(True)
