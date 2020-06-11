@@ -26,7 +26,7 @@ def read_pgm(pgmf):
 	return torch.tensor(raster, dtype=torch.uint8)
 
 def display_example():
-	plt.imshow(read_pgm(open(join(os.extsep, dirname(__file__), 's1', '1.pgm'), 'rb')), plt.cm.gray)
+	plt.imshow(read_pgm(open(join(os.curdir, dirname(__file__), 's1', '1.pgm'), 'rb')), plt.cm.gray)
 	plt.show()
 
 def get_data():
@@ -35,7 +35,7 @@ def get_data():
 	test_features = torch.empty(size=(120, 1, 112, 92), dtype=torch.uint8)
 	test_labels = torch.empty(size=(120,), dtype=torch.uint8)
 	i = 0
-	for root, dirs, files in os.walk(join(os.extsep, dirname(__file__)), topdown=True):
+	for root, dirs, files in os.walk(join(os.curdir, dirname(__file__)), topdown=True):
 		dirs.sort(key=lambda w: (len(w), w)) #sort by length first, then lexicographically
 		files.sort(key=lambda w: (len(w), w)) #sort by length first, then lexicographically
 		for filename in files:
@@ -51,10 +51,10 @@ def get_data():
 
 def write_data():
 	train_features, train_labels, test_features, test_labels = get_data()
-	train_features_path = join(os.extsep, dirname(__file__), f'train_features{os.extsep}pt')
-	train_labels_path = join(os.extsep, dirname(__file__), f'train_labels{os.extsep}pt')
-	test_features_path = join(os.extsep, dirname(__file__), f'test_features{os.extsep}pt')
-	test_labels_path = join(os.extsep, dirname(__file__), f'test_labels{os.extsep}pt')
+	train_features_path = join(os.curdir, dirname(__file__), f'train_features{os.extsep}pt')
+	train_labels_path = join(os.curdir, dirname(__file__), f'train_labels{os.extsep}pt')
+	test_features_path = join(os.curdir, dirname(__file__), f'test_features{os.extsep}pt')
+	test_labels_path = join(os.curdir, dirname(__file__), f'test_labels{os.extsep}pt')
 	torch.save(train_features, train_features_path)
 	torch.save(train_labels, train_labels_path)
 	torch.save(test_features, test_features_path)
@@ -68,10 +68,10 @@ def train():
 	)
 	optimizer = torch.optim.Adam(n.parameters(), lr=0.01)
 
-	train_features = torch.load(join(os.extsep, dirname(__file__), f'train_features{os.extsep}pt')).float()
-	train_labels = torch.load(join(os.extsep, dirname(__file__), f'train_labels{os.extsep}pt')).long()
-	test_features = torch.load(join(os.extsep, dirname(__file__), f'test_features{os.extsep}pt')).float()
-	test_labels = torch.load(join(os.extsep, dirname(__file__), f'test_labels{os.extsep}pt')).long()
+	train_features = torch.load(join(os.curdir, dirname(__file__), f'train_features{os.extsep}pt')).float()
+	train_labels = torch.load(join(os.curdir, dirname(__file__), f'train_labels{os.extsep}pt')).long()
+	test_features = torch.load(join(os.curdir, dirname(__file__), f'test_features{os.extsep}pt')).float()
+	test_labels = torch.load(join(os.curdir, dirname(__file__), f'test_labels{os.extsep}pt')).long()
 
 	train_losses = []
 	test_losses = []
